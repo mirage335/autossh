@@ -1,0 +1,89 @@
+#!/bin/bash
+
+#The MIT License (MIT)
+
+#Copyright (c) 2015 mirage335
+
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+
+#The above copyright notice and this permission notice shall be included in
+#all copies or substantial portions of the Software.
+
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+#THE SOFTWARE.
+
+#AutoSSH wrapper script. Provides well-tested settings for maintaining reverse-ssh tunnels.
+
+
+##### Recommended Server-Side Settings. Add to /etc/ssh/sshd_config .
+#ClientAliveCountMax     5
+#ClientAliveInterval     5
+
+##### Script Directory Path Extension #####
+#Retrieves absolute path of current script, while maintaining symlinks, even when "./" would translate with "readlink -f" into something disregarding symlinked components in $PWD.
+#However, will dereference symlinks IF the script location itself is a symlink. This is to allow symlinking to scripts to function normally.
+#Suitable for allowing scripts to find other scripts they depend on. May look like an ugly hack, but it has proven reliable over the years.
+getScriptAbsoluteLocation() {
+	local absoluteLocation
+	if [[ (-e $PWD\/$0) && ($0 != "") ]]
+			then
+	absoluteLocation="$PWD"\/"$0"
+	absoluteLocation=$(realpath -s "$absoluteLocation")
+			else
+	absoluteLocation="$0"
+	fi
+
+	if [[ -h "$absoluteLocation" ]]
+			then
+	absoluteLocation=$(readlink -f "$absoluteLocation")
+	fi
+
+	echo $absoluteLocation
+}
+
+#Retrieves absolute path of current script, while maintaining symlinks, even when "./" would translate with "readlink -f" into something disregarding symlinked components in $PWD.
+#Suitable for allowing scripts to find other scripts they depend on.
+getScriptAbsoluteFolder() {
+	dirname "$(getScriptAbsoluteLocation)"
+}
+
+export PATH="$PATH:$(getScriptAbsoluteFolder)"
+export scriptDirectory="$(getScriptAbsoluteFolder)"
+
+##### Script Directory Path Extension #####
+
+
+if pgrep ^autossh$ > /dev/null
+then
+	exit
+fi
+
+export AUTOSSH_FIRST_POLL=15
+export AUTOSSH_POLL=15
+#export AUTOSSH_GATETIME=0
+export AUTOSSH_GATETIME=15
+
+#export AUTOSSH_PORT=0
+
+#export AUTOSSH_DEBUG=1
+#export AUTOSSH_LOGLEVEL=7
+
+reversePort=9016
+
+while true
+do
+	/usr/bin/autossh -M 0 -o "ExitOnForwardFailure=yes" -o "ConnectTimeout=2" -o "ConnectionAttempts=1" -o "ServerAliveInterval=5" -o "ServerAliveCountMax=5" -o "PubkeyAuthentication=yes" -o "PasswordAuthentication=no" -o "StrictHostKeyChecking=no" -i "$scriptDirectory" -R $reversePort:localhost:22 internal@shimmer.srv.hacdc.org -p 2221 -N
+	
+	sleep 15
+done
+

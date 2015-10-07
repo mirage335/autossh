@@ -1,0 +1,17 @@
+[Unit]
+Description=AutoSSH HacDCInternal Service
+Requires=basic.target network.target
+Wants=network-online.target
+After=basic.target network.target network-online.target
+
+
+[Service]
+Type=simple
+User=root
+Group=root
+ExecStart=/root/core/net/autosshhacdc
+
+[Install]
+WantedBy=multi-user.target
+
+
