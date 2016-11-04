@@ -68,8 +68,8 @@ then
 	exit
 fi
 
-export AUTOSSH_FIRST_POLL=15
-export AUTOSSH_POLL=15
+export AUTOSSH_FIRST_POLL=45
+export AUTOSSH_POLL=45
 #export AUTOSSH_GATETIME=0
 export AUTOSSH_GATETIME=15
 
@@ -84,6 +84,6 @@ while true
 do
 	/usr/bin/autossh -M 0 -o "ExitOnForwardFailure=yes" -o "ConnectTimeout=2" -o "ConnectionAttempts=1" -o "ServerAliveInterval=5" -o "ServerAliveCountMax=5" -o "PubkeyAuthentication=yes" -o "PasswordAuthentication=no" -o "StrictHostKeyChecking=no" -i "$scriptDirectory" -R $reversePort:localhost:22 internal@shimmer.srv.hacdc.org -p 2221 -N
 	
-	sleep 15
+	sleep 270
 done
 
